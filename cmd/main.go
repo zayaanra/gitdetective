@@ -17,14 +17,12 @@ func main() {
 	// If only one argument, then it is just 'gd'. Show basic statistics for the repo.
 	if len(args) == 1 {
 		gd.Basic()
-		/*
-			TODO: Pretty print the following
-			- repo name
-			- creation date
-			- # of files
-			- total lines of code
-			- total # of commits
-			- # of authors
-		*/
+		return
 	}
+
+	// If more than one argument, then it is 'gd <flag>'. Show detailed statistics for the repo.
+	if args[1] == "commits" {
+		gd.DoCommits(flags[1])
+	}
+
 }
