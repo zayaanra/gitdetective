@@ -19,6 +19,8 @@ type GitDetective struct {
 	cmd   string
 	flags []string
 
+	commits *Commits
+
 	os int
 }
 
@@ -35,7 +37,7 @@ func NewGitDetective(cmd string, flags []string) *GitDetective {
 		t = LINUX
 	}
 
-	return &GitDetective{cmd: cmd, flags: flags, os: t}
+	return &GitDetective{cmd: cmd, flags: flags, commits: NewCommits(), os: t}
 }
 
 // Basic prints basic statistics such as:
@@ -50,7 +52,7 @@ func (g *GitDetective) Basic() {
 	date := g.GetRepoCreationDate()
 	numTracked := g.GetNumTrackedFiles()
 	numLines := g.GetNumTotalLinesOfCode()
-	numCommits := g.GetNumCommits()
+	numCommits := g.commits.GetNumCommits()
 	PrintBasic(name, date, numTracked, numLines, numCommits)
 
 }
@@ -104,15 +106,10 @@ func (g *GitDetective) GetNumTotalLinesOfCode() int {
 	return total
 }
 
-func (g *GitDetective) GetNumCommits() int {
-	cmd := exec.Command("git", "rev-list", "--count", "--all")
-	output, err := cmd.Output()
-	if err != nil {
-		log.Fatalf("Error in fetching number of commits: %v", err)
+func (g *GitDetective) DoCommits(flag string) {
+	log.Println(flag)
+	switch {
+	case flag == "-t":
+		g.commits.T()
 	}
-
-	lines := strings.Split(string(output), "\n")
-	count, _ := strconv.Atoi(lines[0])
-
-	return count
 }
