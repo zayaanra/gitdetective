@@ -1,5 +1,9 @@
 # gitdetective
 
+<div align="center">
+  <img src="https://github.com/zayaanra/gitdetective/blob/main/assets/gitdetective-high-resolution-logo.png" height="250">
+</div>
+
 ### Example Usage
 Idea is to run the command as such:
 - `gd`
