@@ -2,14 +2,13 @@ package api
 
 import (
 	"log"
-	"os"
 	"os/exec"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/jedib0t/go-pretty/v6/table"
-	"github.com/jedib0t/go-pretty/v6/text"
+	ui "github.com/gizak/termui/v3"
+	"github.com/gizak/termui/v3/widgets"
 )
 
 type Commits struct {
@@ -36,12 +35,13 @@ func (c *Commits) GetNumCommits() int {
 }
 
 /* gd commits -t */
-// The -t flag produces repo. statistics for only today.
+// The -t flag produces repo. statistics for only the past 24 hours.
+// If an argument is present, then it will show depending on the number of past hours provided.
 // Specifically, it will show a table consisting of each hour of the day and the number of commits per hour.
 func (c *Commits) T() {
 	now := time.Now()
 	pastDay := now.Add(-24 * time.Hour)
-	since := pastDay.Format("2006-01-02T:15:04:05")
+	since := pastDay.Format("2006-01-02T15:04:05")
 
 	cmd := exec.Command("git", "log", "--since="+since, "--format=%ci")
 	output, err := cmd.Output()
@@ -59,22 +59,32 @@ func (c *Commits) T() {
 		}
 	}
 
-	t := table.NewWriter()
-	t.SetOutputMirror(os.Stdout)
-	t.AppendHeader(table.Row{"Hour", "Commits"})
+	if err := ui.Init(); err != nil {
+		log.Fatalf("Failed to initialize termui: %v", err)
+	}
+	defer ui.Close()
 
+	table := widgets.NewTable()
+	table.Rows = [][]string{
+		{"Hour", "Commits"},
+	}
 	for hour, count := range commits {
-		var color text.Color
-		switch {
-		case count >= 10:
-			color = text.FgHiRed
-		case count >= 5:
-			color = text.FgHiYellow
-		default:
-			color = text.FgHiGreen
-		}
-		t.AppendRow([]interface{}{color.Sprint(hour), color.Sprint(count)})
+		table.Rows = append(table.Rows, []string{hour, strconv.Itoa(count)})
 	}
 
-	t.Render()
+	table.TextStyle = ui.NewStyle(ui.ColorWhite)
+	table.SetRect(0, 0, 50, 10)
+	table.BorderStyle = ui.NewStyle(ui.ColorYellow)
+	table.RowSeparator = true
+
+	ui.Render(table)
+
+	uiEvents := ui.PollEvents()
+	for {
+		e := <-uiEvents
+		switch e.ID {
+		case "q", "<C-c>":
+			return
+		}
+	}
 }
