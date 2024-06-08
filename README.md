@@ -29,6 +29,13 @@ This provides information about each author.
 - `gd authors -p`
 This will provide author-related statistics in the form of a pie chart. Each slice of the pie is how much they have each contributed as a percentage.
 
+### Additional Features
+Some features that would be interesting:
+- Serve stats on a webpage
+- Use AI/ML to predict future `git` usage
+- Use LLms to generate nicer and cleaner visualizations
+
+
 
 
 
