@@ -68,16 +68,40 @@ func (c *Commits) T() {
 	table.Rows = [][]string{
 		{"Hour", "Commits"},
 	}
+	
 	for hour, count := range commits {
 		table.Rows = append(table.Rows, []string{hour, strconv.Itoa(count)})
 	}
 
 	table.TextStyle = ui.NewStyle(ui.ColorWhite)
 	table.SetRect(0, 0, 50, 10)
-	table.BorderStyle = ui.NewStyle(ui.ColorYellow)
+	table.BorderStyle = ui.NewStyle(ui.ColorBlue)
 	table.RowSeparator = true
 
-	ui.Render(table)
+	bc := widgets.NewBarChart()
+
+	values := make([]float64, 24)
+	for i := 0; i < 24; i++ {
+		hour := strconv.Itoa(i)
+		if count, ok := commits[hour]; ok {
+			values[i] = float64(count)
+		} else {
+			values[i] = 0
+		}
+	}
+
+	bc.Data = values
+	bc.Labels = []string{"0", "1", " 2", " 3", " 4", " 5", " 6", " 7", " 8", " 9",
+		" 10", " 11", " 12", " 13", " 14", " 15", " 16", " 17", " 18", " 19", " 20", " 21", " 22", " 23"}
+	bc.Title = "Commits per Hour"
+	bc.BarWidth = 2
+	bc.BarColors = []ui.Color{ui.ColorBlue}
+	bc.BorderStyle = ui.NewStyle(ui.ColorBlue)
+	bc.LabelStyles = []ui.Style{ui.NewStyle(ui.ColorWhite)}
+	bc.NumStyles = []ui.Style{ui.NewStyle(ui.ColorWhite)}
+	bc.SetRect(0, 10, 80, 20)
+
+	ui.Render(table, bc)
 
 	uiEvents := ui.PollEvents()
 	for {
