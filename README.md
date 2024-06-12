@@ -23,23 +23,29 @@ The `-y` flag producs repository statistics for the past year.
 
 In addition to the previous 3 commands, you can provide a duration (e.g. `gd commits -w 3`) which shows the the repository statistics from the past 3 weeks.
 
-- `gd authors`
-This provides information about each author.
+- `gd commits --save <path>`
+Saves all information recorded in the output of `gd commits` into a CSV file where `<path>` is.
 
-- `gd authors -p`
-This will provide author-related statistics in the form of a pie chart. Each slice of the pie is how much they have each contributed as a percentage.
+- `gd authors`
+This provides information about each author. We'll show a pie chart with each author's contribution as a percentage, a table with each author and the amount of commits they made, as well as a list of each files along with the number of commits each file has.
+
+- `gd authors --save <path>`
+Saves all information recorded in the output of `gd authors` into a CSV file where `<path>` is.
+
+- `gd authors -t`
+Does the same as `gd authors` but only for the past 24 hours.
+
+- `gd authors -w`
+Does the same `gd authors` but for the past week. Num of weeks can be specified.
+
+- `gd authors -m`
+Does the same `gd authors` but for the past month. Num of months can be specified.
+
+- `gd authors -y`
+Does the same `gd authors` but for the past year. Num of years can be specified.
 
 ### Additional Features
 Some features that would be interesting:
 - Serve stats on a webpage
 - Use AI/ML to predict future `git` usage
 - Use LLms to generate nicer and cleaner visualizations
-
-
-
-
-
-
-
-
-
