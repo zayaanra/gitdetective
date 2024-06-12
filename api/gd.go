@@ -107,9 +107,12 @@ func (g *GitDetective) GetNumTotalLinesOfCode() int {
 }
 
 func (g *GitDetective) DoCommits(flag string) {
-	log.Println(flag)
 	switch {
 	case flag == "-t":
 		g.commits.T()
 	}
+}
+
+func (g *GitDetective) DoAuthors() []AuthorEntry{
+	return AuthorStats()
 }
