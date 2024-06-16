@@ -1,4 +1,4 @@
-package api
+package gd
 
 import (
 	"fmt"
@@ -104,6 +104,12 @@ func (g *GitDetective) Basic() dataframe.DataFrame {
 		series.New([]int{numLines}, series.Int, "Num. of Lines of Code"),
 		series.New([]int{numCommits}, series.Int, "Num. of Commits"),
 	)
+}
+
+// This outputs information for the -c flag:
+// - # of commits since some time
+func (g *GitDetective) Commits() {
+
 }
 
 // func (g *GitDetective) DoCommits(flag string) {

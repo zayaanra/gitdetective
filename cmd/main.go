@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/go-gota/gota/dataframe"
-	"github.com/zayaanra/gitdetective/api"
+	"github.com/zayaanra/gitdetective/gd"
 )
 
 const (
@@ -18,7 +18,7 @@ const (
 
 // Represents the command provided by the user in struct form
 type Command struct {
-	cmdtype int // Either -c (commit) or -a (author)
+	cmdtype int // Specifies what type of output the user wants
 
 	save_opts *SaveOptions // Used if 'save' flag is enabled
 
@@ -32,7 +32,7 @@ type SaveOptions struct {
 func main() {
 	cmd := parseFlags()
 
-	gd := api.NewGitDetective()
+	gd := gd.NewGitDetective()
 
 	var df dataframe.DataFrame
 
@@ -76,6 +76,7 @@ func parseFlags() *Command {
 
 	var saveOpts *SaveOptions
 
+	// TODO: Will need to change args indexing as commands grow
 	if len(os.Args) > 2 && os.Args[2] == "save" {
 		// Save subcommand - used to save output data to a CSV file in some location
 		saveCmd := flag.NewFlagSet("save", flag.ExitOnError)
