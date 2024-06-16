@@ -3,14 +3,17 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
-	// "github.com/zayaanra/gitdetective/api"
-	// "github.com/go-gota/gota/dataframe"
+
+	"github.com/go-gota/gota/dataframe"
+	"github.com/zayaanra/gitdetective/api"
 )
 
 const (
-	AUTHORS = 0
+	BASIC   = 0
 	COMMITS = 1
+	AUTHORS = 2
 )
 
 // Represents the command provided by the user in struct form
@@ -27,50 +30,41 @@ type SaveOptions struct {
 }
 
 func main() {
-	// cmd := parseFlags()
-	parseFlags()
-	// args := os.Args
+	cmd := parseFlags()
 
-	// cmd := args[0]
-	// flags := args[2:]
+	gd := api.NewGitDetective()
 
-	// gd := api.NewGitDetective(cmd, flags)
+	var df dataframe.DataFrame
 
-	// // If only one argument, then it is just 'gd'. Show basic statistics for the repo.
-	// if len(args) == 1 {
-	// 	gd.Basic()
-	// 	return
-	// }
+	// If user entered -b, perform basic stats.
+	if cmd.cmdtype == BASIC {
+		df = gd.Basic()
+	} else if cmd.cmdtype == COMMITS {
+		// TODO
+	}
 
-	// // var cmdtype int
+	// If save option is enabled, save DF as CSV to the given path as the given filename
+	if cmd.save_opts != nil {
+		fullPath := fmt.Sprintf("%s%s", cmd.save_opts.path, cmd.save_opts.filename)
+		file, err := os.Create(fullPath)
+		if err != nil {
+			log.Fatalf("Failed to create file: %v", err)
 
-	// // If more than one argument, then it is 'gd <flag>'. Show detailed statistics for the repo.
-	// if args[1] == "commits" {
-	// 	gd.DoCommits(flags[0])
-	// 	// cmdtype = api.COMMITS
-	// } else if args[1] == "authors" {
-	// 	gd.DoAuthors()
-	// 	// cmdtype = api.AUTHOR
-	// }
+		}
+		defer file.Close()
 
-	// for i, flag := range flags {
-	// 	if flag == "--save" && i == len(flags)-1 {
-	// 		log.Fatalf("Failed - no output path specified")
-	// 	}
+		if err := df.WriteCSV(file); err != nil {
+			log.Fatalf("Failed to write DF to CSV: %v", err)
+		}
 
-	// 	if flag == "--save" {
-	// 		// path := flag[i+1]
-	// 		//save(string(path), cmdtype)
-	// 	}
-	// }
-
-	// TODO - Need to refactor codebase. It's getting too messy.
-	// TODO - Work on --save.
+		fmt.Printf("DataFrame was saved to %s\n", fullPath)
+	}
 
 }
 
 func parseFlags() *Command {
 	// Main command flags
+	basicCmd := flag.Bool("b", false, "Show basic stats")
 	commitsCmd := flag.Bool("c", false, "Show commit stats")
 	authorsCmd := flag.Bool("a", false, "Show author stats")
 	flag.Parse()
@@ -107,14 +101,17 @@ func parseFlags() *Command {
 		}
 	}
 
-	fmt.Println("commits:", *commitsCmd)
-	fmt.Println("authors:", *authorsCmd)
+	// fmt.Println("commits:", *commitsCmd)
+	// fmt.Println("authors:", *authorsCmd)
+	// fmt.Println("basic:", *basicCmd)
 
 	var cmdtype int
 	if *commitsCmd {
 		cmdtype = COMMITS
-	} else {
+	} else if *authorsCmd {
 		cmdtype = AUTHORS
+	} else if *basicCmd {
+		cmdtype = BASIC
 	}
 
 	return &Command{cmdtype: cmdtype, save_opts: saveOpts}

@@ -3,7 +3,6 @@ package api
 import (
 	"log"
 
-	"fmt"
 	"os/exec"
 	
 

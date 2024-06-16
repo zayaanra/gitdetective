@@ -1,12 +1,16 @@
 package api
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"os/exec"
 	"runtime"
 	"strconv"
 	"strings"
+
+	"github.com/go-gota/gota/dataframe"
+	"github.com/go-gota/gota/series"
 )
 
 const (
@@ -16,15 +20,10 @@ const (
 )
 
 type GitDetective struct {
-	cmd   string
-	flags []string
-
-	commits *Commits
-
 	os int
 }
 
-func NewGitDetective(cmd string, flags []string) *GitDetective {
+func NewGitDetective() *GitDetective {
 	var t int
 	os := runtime.GOOS
 
@@ -37,7 +36,7 @@ func NewGitDetective(cmd string, flags []string) *GitDetective {
 		t = LINUX
 	}
 
-	return &GitDetective{cmd: cmd, flags: flags, commits: NewCommits(), os: t}
+	return &GitDetective{os: t}
 }
 
 // Basic prints basic statistics such as:
@@ -46,73 +45,74 @@ func NewGitDetective(cmd string, flags []string) *GitDetective {
 // - # of files
 // - total lines of code
 // - total # of commits
-// - # of authors
-func (g *GitDetective) Basic() {
-	name := g.GetRepoName()
-	date := g.GetRepoCreationDate()
-	numTracked := g.GetNumTrackedFiles()
-	numLines := g.GetNumTotalLinesOfCode()
-	numCommits := g.commits.GetNumCommits()
-	PrintBasic(name, date, numTracked, numLines, numCommits)
-
-}
-
-func (g *GitDetective) GetRepoName() string {
+func (g *GitDetective) Basic() dataframe.DataFrame {
+	// Get repo name
 	path, err := os.Getwd()
 	if err != nil {
 		log.Fatalf("Error in fetching repo name: %v", err)
 	}
+	repoName := path[strings.LastIndex(path, "/")+1:]
 
-	return path[strings.LastIndex(path, "/")+1:]
-}
-
-func (g *GitDetective) GetRepoCreationDate() string {
+	// Get repo creation date
 	cmd := exec.Command("git", "log", "--reverse", "--format=%aI")
 	output, err := cmd.Output()
 	if err != nil {
 		log.Fatalf("Error in fetching repo creation date: %v", err)
 	}
+	creationDate := strings.Split(string(output), "\n")[0]
 
-	lines := strings.Split(string(output), "\n")
-
-	return lines[0]
-}
-
-func (g *GitDetective) GetNumTrackedFiles() int {
-	cmd := exec.Command("/bin/sh", "-c", "git ls-files | wc -l")
-	output, err := cmd.Output()
+	// Get # of tracked files
+	cmd = exec.Command("/bin/sh", "-c", "git ls-files | wc -l")
+	output, err = cmd.Output()
 	if err != nil {
 		log.Fatalf("Error in fetching number of tracked files: %v", err)
 	}
-
 	lines := strings.Split(string(output), "\n")
-	count, _ := strconv.Atoi(lines[0])
+	numTracked, _ := strconv.Atoi(lines[0])
 
-	return count
-}
-
-func (g *GitDetective) GetNumTotalLinesOfCode() int {
-	cmd := exec.Command("/bin/sh", "-c", "git ls-files | xargs wc -l")
-	output, err := cmd.Output()
+	// Get # of lines of code
+	cmd = exec.Command("/bin/sh", "-c", "git ls-files | xargs cat | wc -l")
+	output, err = cmd.Output()
 	if err != nil {
 		log.Fatalf("Error in fetching number of total lines of code: %v", err)
 	}
+	lines = strings.Split(string(output), "\n")
+	parsed := strings.Trim(lines[0], " ")
+	numLines, _ := strconv.Atoi(parsed)
 
-	lines := strings.Split(string(output), "\n")
-	lastLine := lines[len(lines)-2]
-	parsed := strings.Split(lastLine, " ")
-	total, _ := strconv.Atoi(parsed[1])
-
-	return total
-}
-
-func (g *GitDetective) DoCommits(flag string) {
-	switch {
-	case flag == "-t":
-		g.commits.T()
+	// Get # of commits
+	cmd = exec.Command("git", "rev-list", "--count", "--all")
+	output, err = cmd.Output()
+	if err != nil {
+		log.Fatalf("Error in fetching number of commits: %v", err)
 	}
+	lines = strings.Split(string(output), "\n")
+	numCommits, _ := strconv.Atoi(lines[0])
+
+	// Print out basic info
+	fmt.Printf("Repository Name: %s\nRepository Creation Date: %s\n# of Tracked Files: %d\n# of Lines of Code: %d\n# of Commits: %d\n",
+		repoName,
+		creationDate,
+		numTracked,
+		numLines,
+		numCommits)
+
+	return dataframe.New(
+		series.New([]string{repoName}, series.String, "Repository Name"),
+		series.New([]string{creationDate}, series.String, "Creation Date"),
+		series.New([]int{numTracked}, series.Int, "Num. of Tracked Files"),
+		series.New([]int{numLines}, series.Int, "Num. of Lines of Code"),
+		series.New([]int{numCommits}, series.Int, "Num. of Commits"),
+	)
 }
 
-func (g *GitDetective) DoAuthors() []AuthorEntry{
-	return AuthorStats()
-}
+// func (g *GitDetective) DoCommits(flag string) {
+// 	switch {
+// 	case flag == "-t":
+// 		g.commits.T()
+// 	}
+// }
+
+// func (g *GitDetective) DoAuthors() []AuthorEntry{
+// 	return AuthorStats()
+// }

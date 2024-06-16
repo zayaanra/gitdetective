@@ -9,6 +9,7 @@ import (
 
 	ui "github.com/gizak/termui/v3"
 	"github.com/gizak/termui/v3/widgets"
+
 )
 
 type Commits struct {
@@ -17,21 +18,6 @@ type Commits struct {
 
 func NewCommits() *Commits {
 	return &Commits{}
-}
-
-func (c *Commits) GetNumCommits() int {
-	cmd := exec.Command("git", "rev-list", "--count", "--all")
-	output, err := cmd.Output()
-	if err != nil {
-		log.Fatalf("Error in fetching number of commits: %v", err)
-	}
-
-	lines := strings.Split(string(output), "\n")
-	count, _ := strconv.Atoi(lines[0])
-
-	c.count = count
-
-	return count
 }
 
 /* gd commits -t */
