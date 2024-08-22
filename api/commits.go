@@ -2,6 +2,7 @@ package api
 
 import (
 	"log"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -38,8 +39,6 @@ func commitsByHour() map[int]int {
 		}
 	}
 
-	log.Println(commits)
-
 	for i := 0; i < 24; i++ {
 		_, ok := commits[i]
 		if !ok {
@@ -50,11 +49,59 @@ func commitsByHour() map[int]int {
 	return commits
 }
 
-func commitsByDay() {
+func commitsByDay() map[int]int {
+	cmd := exec.Command("git", "log", "--since=last.week", "--pretty=format:'%cd'", "--date=format:%A")
+	cmd2 := exec.Command("sort")
+	cmd3 := exec.Command("uniq -c")
+	cmd4 := exec.Command("sort -nr")
+
+	cmd2.Stdin, _ = cmd.StdoutPipe()
+	cmd3.Stdin, _ = cmd2.StdoutPipe()
+	cmd4.Stdin, _ = cmd3.StdoutPipe()
+	cmd4.Stdout = os.Stdout
+
+	cmd4.Start()
+	cmd3.Start()
+	cmd2.Start()
+	cmd.Run()
+	cmd2.Wait()
+	cmd3.Wait()
+	cmd4.Wait()
+
+
+	//log.Println(cmd3.Stdout)
+
+
+	// output, err := cmd.Output()
+	// if err != nil {
+	// 	log.Fatalf("Error in fetching number of commits per hour: %v", err)
+	// }
+
+	// lines := strings.Split(string(output), "\n")
+	// log.Println(lines)
+	commits := make(map[int]int)
+
+	// for _, line := range lines {
+	// 	if len(line) >= 10 {
+	// 		hour, _ := strconv.Atoi(line[11:13])
+	// 		commits[hour]++
+	// 	}
+	// }
+
+	// log.Println(commits)
+
+	// for i := 0; i < 24; i++ {
+	// 	_, ok := commits[i]
+	// 	if !ok {
+	// 		commits[i] = 0
+	// 	}
+	// }
+
+	return commits
 }
 
 func PerformCommits() *CommitsData {
-	data := &CommitsData{ByHour: commitsByHour()}
+	data := &CommitsData{ByHour: commitsByHour(), ByDay: commitsByDay()}
 
 	return data
 }

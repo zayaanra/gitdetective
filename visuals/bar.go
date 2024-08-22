@@ -1,7 +1,6 @@
 package visuals
 
 import (
-	"log"
 	"sort"
 
 	"github.com/go-echarts/go-echarts/v2/charts"
@@ -16,12 +15,10 @@ func GenerateBar(title string, subtitle string, xName string, yName string, cate
 		charts.WithYAxisOpts(opts.YAxis{Name: yName}),
 	)
 
-	items := make([]opts.BarData, 0)
-	for _, numOfCommits := range data {
-		items = append(items, opts.BarData{Value: numOfCommits})
+	items := make([]opts.BarData, len(data))
+	for i := 0; i < len(data); i++ {
+		items[i] = opts.BarData{Value: data[i]}
 	}
-
-	log.Println(items)
 
 	keySet := make([]int, 0)
 	for k := range data {
