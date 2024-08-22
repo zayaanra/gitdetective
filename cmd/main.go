@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/go-echarts/go-echarts/v2/components"
 	"github.com/spf13/cobra"
@@ -39,15 +40,19 @@ func main() {
 		No. of lines committed (added/removed) by day for the past month
 		`,
 		Run: func(cmd *cobra.Command, args []string) {
+			page := components.NewPage()
 			data := api.PerformCommits()
 
-			f, err := os.Create("commits_report.html")
+			bar_byHour := visuals.GenerateBar("Commits By Hour in the Past 24 Hours", "", "Hour of Day", "# of Commits", "No. of Commits", data.ByHour)
+			page.AddCharts(
+				bar_byHour,
+			)
+
+			f, err := os.Create(filepath.Join(cwd, "commits_report.html"))
 			if err != nil {
 				panic(err)
 			}
-			page := components.NewPage()
 			page.Render(io.MultiWriter(f))
-			visuals.GenerateBar("Commits By Hour in the Past 24 Hours", "", "No. of Commits", data.ByHour)
 		},
 	}
 

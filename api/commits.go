@@ -3,20 +3,21 @@ package api
 import (
 	"log"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 )
 
 type CommitsData struct {
-	ByMonth map[string]int
-	ByHour  map[string]int
-	ByDay   map[string]int
+	ByMonth map[int]int
+	ByHour  map[int]int
+	ByDay   map[int]int
 }
 
 func commitsByMonth() {
 }
 
-func commitsByHour() map[string]int {
+func commitsByHour() map[int]int {
 	now := time.Now()
 	pastDay := now.Add(-24 * time.Hour)
 	since := pastDay.Format("2006-01-02T15:04:05")
@@ -28,12 +29,21 @@ func commitsByHour() map[string]int {
 	}
 
 	lines := strings.Split(string(output), "\n")
-	commits := make(map[string]int)
+	commits := make(map[int]int)
 
 	for _, line := range lines {
 		if len(line) >= 10 {
-			hour := line[11:13]
+			hour, _ := strconv.Atoi(line[11:13])
 			commits[hour]++
+		}
+	}
+
+	log.Println(commits)
+
+	for i := 0; i < 24; i++ {
+		_, ok := commits[i]
+		if !ok {
+			commits[i] = 0
 		}
 	}
 
