@@ -1,119 +1,66 @@
 package main
 
 import (
-	"flag"
 	"fmt"
+	"io"
 	"log"
 	"os"
 
-	"github.com/go-gota/gota/dataframe"
-	"github.com/zayaanra/gitdetective/gd"
+	"github.com/go-echarts/go-echarts/v2/components"
+	"github.com/spf13/cobra"
+
+	"github.com/zayaanra/gitdetective/api"
+	"github.com/zayaanra/gitdetective/visuals"
 )
-
-const (
-	BASIC   = 0
-	COMMITS = 1
-	AUTHORS = 2
-)
-
-// Represents the command provided by the user in struct form
-type Command struct {
-	cmdtype int // Specifies what type of output the user wants
-
-	save_opts *SaveOptions // Used if 'save' flag is enabled
-
-}
-
-type SaveOptions struct {
-	path     string
-	filename string
-}
 
 func main() {
-	cmd := parseFlags()
-
-	gd := gd.NewGitDetective()
-
-	var df dataframe.DataFrame
-
-	// If user entered -b, perform basic stats.
-	if cmd.cmdtype == BASIC {
-		df = gd.Basic()
-	} else if cmd.cmdtype == COMMITS {
-		// TODO
+	cwd, err := os.Getwd()
+	if err != nil {
+		log.Fatalf("Error: %v", err)
 	}
 
-	// If save option is enabled, save DF as CSV to the given path as the given filename
-	if cmd.save_opts != nil {
-		fullPath := fmt.Sprintf("%s%s", cmd.save_opts.path, cmd.save_opts.filename)
-		file, err := os.Create(fullPath)
-		if err != nil {
-			log.Fatalf("Failed to create file: %v", err)
-
-		}
-		defer file.Close()
-
-		if err := df.WriteCSV(file); err != nil {
-			log.Fatalf("Failed to write DF to CSV: %v", err)
-		}
-
-		fmt.Printf("DataFrame was saved to %s\n", fullPath)
+	var rootCmd = &cobra.Command{
+		Use: "gd",
+		Annotations: map[string]string{
+			cobra.CommandDisplayNameAnnotation: "gd",
+		},
 	}
+	rootCmd.PersistentFlags().StringVar(&cwd, "output", "", "Path to where output files are generated. Default is directory from which this command is run.")
 
-}
+	commitsCmd := &cobra.Command{
+		Use:   "commits",
+		Short: "Generates several statistics based on the number of commits for some time period",
+		Long: `Generates several statistics based on the number of commits for some time period.
+		Specifically, it will generate charts showcasing:
+		Commits per hour for the past 24 hours
+		Commits per day of the week for the past week
+		Commits per hour of the week by day for the past week
+		Commits by month of the year for the past year
+		No. of lines committed (added/removed) by day for the past month
+		`,
+		Run: func(cmd *cobra.Command, args []string) {
+			data := api.PerformCommits()
 
-func parseFlags() *Command {
-	// Main command flags
-	basicCmd := flag.Bool("b", false, "Show basic stats")
-	commitsCmd := flag.Bool("c", false, "Show commit stats")
-	authorsCmd := flag.Bool("a", false, "Show author stats")
-	flag.Parse()
-
-	if len(os.Args) < 2 {
-		fmt.Println("Not enough arguments provided")
-		os.Exit(1)
-	}
-
-	var saveOpts *SaveOptions
-
-	// TODO: Will need to change args indexing as commands grow
-	if len(os.Args) > 2 && os.Args[2] == "save" {
-		// Save subcommand - used to save output data to a CSV file in some location
-		saveCmd := flag.NewFlagSet("save", flag.ExitOnError)
-		path := saveCmd.String("path", "", "Specify the path for where the output file should be saved")
-		filename := saveCmd.String("filename", "", "Specify the filename for the output file")
-
-		switch os.Args[2] {
-		case "save":
-			// usage: gd <-c/-a> save -path=<filepath> -filename=<filename>
-			saveCmd.Parse(os.Args[3:])
-
-			if len(*path) == 0 || len(*filename) == 0 {
-				fmt.Println("Error: File path or filename was empty")
-				os.Exit(1)
+			f, err := os.Create("commits_report.html")
+			if err != nil {
+				panic(err)
 			}
-			saveOpts = &SaveOptions{path: *path, filename: *filename}
-			fmt.Println("subcommand 'save'")
-			fmt.Println("	path:", *path)
-			fmt.Println("	filename:", *filename)
-		default:
-			flag.Usage()
-			os.Exit(1)
-		}
+			page := components.NewPage()
+			page.Render(io.MultiWriter(f))
+			visuals.GenerateBar("Commits By Hour in the Past 24 Hours", "", "No. of Commits", data.ByHour)
+		},
 	}
 
-	// fmt.Println("commits:", *commitsCmd)
-	// fmt.Println("authors:", *authorsCmd)
-	// fmt.Println("basic:", *basicCmd)
-
-	var cmdtype int
-	if *commitsCmd {
-		cmdtype = COMMITS
-	} else if *authorsCmd {
-		cmdtype = AUTHORS
-	} else if *basicCmd {
-		cmdtype = BASIC
+	authorsCmd := &cobra.Command{
+		Use:   "authors",
+		Short: "Generates several statistics based on the authors of the repository",
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Println("gd authors")
+		},
 	}
+	rootCmd.AddCommand(commitsCmd)
+	rootCmd.AddCommand(authorsCmd)
 
-	return &Command{cmdtype: cmdtype, save_opts: saveOpts}
+	rootCmd.Execute()
+
 }
